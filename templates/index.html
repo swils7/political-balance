@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Political Balance</title>
+    <style>
+        body {
+            background-color: #3c2f21;
+            color: #000;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .faction-icons {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background-color: #2a2118;
+        }
+
+        .faction-icon {
+            font-size: 24px;
+            color: #8b8178;
+        }
+
+        .document-container {
+            background-color: #f4f1ea;
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            min-height: 400px;
+        }
+
+        .document-header {
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: 'Times New Roman', serif;
+        }
+
+        .document-content {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            white-space: pre-line;
+        }
+
+        #signature-line {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .swipe-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .swipe-left, .swipe-right {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: background-color 0.3s;
+        }
+
+        .swipe-left:hover, .swipe-right:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .arrow {
+            font-size: 24px;
+            margin: 0 10px;
+        }
+
+        .policy-impact {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px auto;
+            max-width: 80%;
+            font-style: italic;
+            color: #f4f1ea;
+        }
+
+        .stats-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background-color: rgba(0,0,0,0.7);
+            color: #f4f1ea;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .popularity-bars {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            background-color: rgba(0,0,0,0.7);
+            color: #f4f1ea;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .bar {
+            width: 200px;
+            height: 20px;
+            background-color: #2a2118;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+            position: absolute;
+        }
+
+        .military-fill {
+            background-color: #8b0000;
+        }
+
+        .business-fill {
+            background-color: #006400;
+        }
+
+        .citizen-fill {
+            background-color: #00008b;
+        }
+
+        .bar-label {
+            margin-bottom: 5px;
+        }
+
+        #game-over {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.9);
+            color: #f4f1ea;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="faction-icons">
+        <div class="faction-icon">✝</div>
+        <div class="faction-icon">$</div>
+        <div class="faction-icon">★</div>
+        <div class="faction-icon">👤</div>
+    </div>
+
+    <div class="popularity-bars">
+        <div class="bar-label">Military</div>
+        <div class="bar">
+            <div class="bar-fill military-fill" id="military-bar" style="width: 50%"></div>
+        </div>
+        <div class="bar-label">Business</div>
+        <div class="bar">
+            <div class="bar-fill business-fill" id="business-bar" style="width: 50%"></div>
+        </div>
+        <div class="bar-label">Citizens</div>
+        <div class="bar">
+            <div class="bar-fill citizen-fill" id="citizen-bar" style="width: 50%"></div>
+        </div>
+    </div>
+
+    <div class="document-container">
+        <div class="document-header">
+            <h2>OFFICE OF THE PRESIDENCY</h2>
+            <h3>WASHINGTON</h3>
+            <p>Executive Order #<span id="order-number">1119</span></p>
+        </div>
+        <div class="document-content" id="current-policy">
+            Loading...
+        </div>
+        <div id="signature-line">
+            _______________________
+            <br>
+            SIGNATURE
+        </div>
+    </div>
+
+    <div class="policy-impact" id="impact-text"></div>
+
+    <div class="stats-container">
+        Years in Power: <span id="years-in-power">0</span>
+    </div>
+
+    <div class="swipe-controls">
+        <div class="swipe-left" onclick="processSwipe('left')">
+            <span class="arrow">←</span>
+            Swipe left to reject
+        </div>
+        <div class="swipe-right" onclick="processSwipe('right')">
+            Swipe right to sign
+            <span class="arrow">→</span>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <h2>Game Over</h2>
+        <p id="game-over-reason"></p>
+        <p>Years in Power: <span id="final-years"></span></p>
+        <button onclick="location.reload()">Play Again</button>
+    </div>
+
+    <script>
+        let gameId = null;
+        let currentScenario = null;
+
+        function updatePopularityBars(state) {
+            document.getElementById('military-bar').style.width = `${state.military}%`;
+            document.getElementById('business-bar').style.width = `${state.business}%`;
+            document.getElementById('citizen-bar').style.width = `${state.citizen}%`;
+            document.getElementById('years-in-power').textContent = state.turns;
+        }
+
+        async function startGame() {
+            const response = await fetch('/start_game', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            gameId = data.game_id;
+            updatePopularityBars(data.initial_state);
+            await getNewScenario();
+        }
+
+        async function getNewScenario() {
+            const response = await fetch('/get_scenario');
+            currentScenario = await response.json();
+            document.getElementById('current-policy').textContent = currentScenario.content;
+            document.getElementById('impact-text').textContent = currentScenario.impact;
+            document.getElementById('order-number').textContent = Math.floor(Math.random() * 9000) + 1000;
+        }
+
+        async function processSwipe(direction) {
+            if (!gameId) return;
+
+            const response = await fetch('/process_swipe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    game_id: gameId,
+                    direction: direction
+                })
+            });
+            const data = await response.json();
+            
+            if (data.new_state.game_over) {
+                document.getElementById('game-over').style.display = 'block';
+                document.getElementById('final-years').textContent = data.new_state.turns;
+                return;
+            }
+
+            updatePopularityBars(data.new_state);
+            await getNewScenario();
+        }
+
+        // Handle keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                processSwipe('left');
+            } else if (e.key === 'ArrowRight') {
+                processSwipe('right');
+            }
+        });
+
+        // Start the game when the page loads
+        window.onload = startGame;
+    </script>
+</body>
+</html>
